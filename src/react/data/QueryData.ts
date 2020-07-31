@@ -227,6 +227,8 @@ export class QueryData<TData, TVariables> extends OperationData {
   }
 
   private updateObservableQuery() {
+    if (this.getOptions().skip) return;
+
     // If we skipped initially, we may not have yet created the observable
     if (!this.currentObservable) {
       this.initializeObservableQuery();
@@ -323,19 +325,7 @@ export class QueryData<TData, TVariables> extends OperationData {
     let result: any = this.observableQueryFields();
     const options = this.getOptions();
 
-    // When skipping a query (ie. we're not querying for data but still want
-    // to render children), make sure the `data` is cleared out and
-    // `loading` is set to `false` (since we aren't loading anything).
-    if (options.skip) {
-      result = {
-        ...result,
-        data: undefined,
-        error: undefined,
-        loading: false,
-        called: true
-      };
-    } else if (this.currentObservable) {
-      // Fetch the current result (if any) from the store.
+    if (this.currentObservable) {
       const currentResult = this.currentObservable.getCurrentResult();
       const { data, loading, partial, networkStatus, errors } = currentResult;
       let { error } = currentResult;
@@ -355,7 +345,7 @@ export class QueryData<TData, TVariables> extends OperationData {
         called: true
       };
 
-      if (loading) {
+      if (loading || options.skip) {
         // Fall through without modifying result...
       } else if (error) {
         Object.assign(result, {
